@@ -50,7 +50,8 @@ simplificar_sudoku(Sudoku,Sudoku_posibilidades_mod):-
 	regla0(Sudoku_posibilidades,L),
 	regla1(L,L1),
 	regla2(L1,L2),
-	%regla3(L2,Sudoku_posibilidades_mod),
+	regla3(L2,L3),
+	append([],L3,Sudoku_posibilidades_mod),
 	representarSUDOKU(Sudoku_posibilidades_mod).
 
 % #######################################################################################	
@@ -146,6 +147,7 @@ generarListaLugaresAux(_,[],Z,L2):-
 	reverse(Z,L2).
 % ---------------------------------------------------------------------------------------
 
+
 % #######################################################################################
 % REGLA 0:
 % Si hay un lugar donde solo cabe un número, lo escribimos en el lugar correspondiente y lo 
@@ -228,23 +230,31 @@ aplicaregla0([X|L],L2,L4,L5,Pos1,Pos2):-
 %  listas de la fila, columna o cuadro.
 % #######################################################################################
 % Predicado de la regla 1.
+
+regla1_process_other_rules(SudokuIn, SudokuOut):-
+	regla0(SudokuIn, SudokuOut).
+
 regla1(Sudoku, Sudoku_regla1):-
 	%nl,write('aplica fila'),
 	aplicaregla1_fila(Sudoku, SudokuTemp),
 	%nl,representarSUDOKU(SudokuTemp),
 	regla1(SudokuTemp, Sudoku_regla1).
+
 regla1(Sudoku, Sudoku_regla1):-
 	%nl,write('aplica columna'),
 	aplicaregla1_columna(Sudoku, SudokuTemp),
 	%nl,representarSUDOKU(SudokuTemp),
 	regla1(SudokuTemp, Sudoku_regla1).
+
 regla1(Sudoku, Sudoku_regla1):-
 	%nl,write('aplica cuadro'),
 	aplicaregla1_cuadro(Sudoku, SudokuTemp),
 	%nl,representarSUDOKU(SudokuTemp),
 	regla1(SudokuTemp, Sudoku_regla1).
+
 regla1(Sudoku, Sudoku_regla1):-
-	append([],Sudoku, Sudoku_regla1).
+	append([],Sudoku, SudokuTemp1),
+	regla1_process_other_rules(SudokuTemp1, Sudoku_regla1).
 
 aplicaregla1_fila(Sudoku, SudokuTemp):-
 	fila(FCC),
@@ -340,7 +350,6 @@ eliminar_valor([I|S], E, L1, Vals):-
 	eliminar_valor(S, E, [I|L1], Vals).
 
 
-
 locate_position(Lista, FCC, Elem, Posicion):-
 	locate_position_aux(Lista, Elem, 1, Pos),
 	nth1(Pos, FCC, Posicion).
@@ -357,13 +366,17 @@ locate_position_aux([L|Lista], Elem, X, Posicion):-
 	Posicion1 is X + 1,
 	locate_position_aux(Lista, Elem, Posicion1, Posicion).
 
+
 locate_position_aux1([], _, _, _).
+
 locate_position_aux1([L|_], Elem, X, Posicion):-
 	integer(L),
+	\+is_list(Elem), 
 	L =:= Elem,
 	Posicion is X.
 locate_position_aux1([L|Lista], Elem, X, Posicion):-
 	integer(L),
+	\+is_list(Elem), 
 	locate_position_aux1(Lista, Elem, X, Posicion).
 
 count(_, [], 0) :- !. /* lista vacia, caso base. */
@@ -424,3 +437,414 @@ validos(8).
 validos(9).
 
 % ---------------------------------------------------------------------------------------
+
+% #######################################################################################
+% REGLA 2:
+% Si dos números aparecen solos en dos lugares distintos de una fila, columna o cuadro, 
+%  los borramos del resto de lugares de la fila, columna o cuadro correspondiente.
+% #######################################################################################
+% ---------------------------------------------------------------------------------------
+regla2_process_other_rules(SudokuIn, SudokuOut):-
+	regla0(SudokuIn, SudokuR0),
+	regla1(SudokuR0, SudokuR1),
+	regla2(SudokuR1, SudokuOut).
+
+
+regla2(SudokuIn,SudokuOut):-
+  	aplicaregla2_fila(SudokuIn,SudokuTemp1),
+  	aplicaregla2_cuadro(SudokuTemp1,SudokuTemp2),
+  	regla2_process_other_rules(SudokuTemp2, SudokuOut).
+
+regla2(SudokuIn,SudokuOut):-
+  	aplicaregla2_columna(SudokuIn,SudokuTemp1),
+  	aplicaregla2_cuadro(SudokuTemp1,SudokuTemp2),
+  	regla2_process_other_rules(SudokuTemp2, SudokuOut).
+
+regla2(SudokuIn,SudokuOut):-
+  	aplicaregla2_cuadro(SudokuIn,SudokuTemp1),
+  	aplicaregla2_fila(SudokuTemp1,SudokuTemp2),
+  	regla2_process_other_rules(SudokuTemp2, SudokuOut).
+
+regla2(SudokuIn,SudokuOut):-
+	aplicaregla2_cuadro(SudokuIn,SudokuTemp1),
+	aplicaregla2_columna(SudokuTemp1,SudokuTemp2),
+  	regla2_process_other_rules(SudokuTemp2, SudokuOut).
+
+regla2(SudokuIn,SudokuOut):-
+  	aplicaregla2_columna(SudokuIn,SudokuTemp2),
+  	regla2_process_other_rules(SudokuTemp2, SudokuOut).
+
+regla2(SudokuIn,SudokuOut):-
+  	aplicaregla2_fila(SudokuIn,SudokuOut),
+  	regla2_process_other_rules(SudokuTemp2, SudokuOut).
+
+regla2(SudokuIn,SudokuOut):-
+	aplicaregla2_cuadro(SudokuIn,SudokuTemp2),
+  	regla2_process_other_rules(SudokuTemp2, SudokuOut).
+
+regla2(SudokuIn, Sudoku_regla2):-
+	append([], SudokuIn, Sudoku_regla2).
+
+aplicaregla2_fila(Sudoku, SudokuTemp):-
+	fila(Confli),
+	generarListaLugares(Sudoku, Confli, ListaLugares),
+    numero_veces(ListaLugares, 2, 2, TR2),
+    is_list(TR2),
+    %locate_list_positions(ListaLugares, Confli, TR2, IList),
+    %anyadir_posiciones_conflictivas(Confli,IList,NuevosConflictivos),
+    reemplaza(Confli,Sudoku,[],SudokuTemp,TR2,_).
+
+aplicaregla2_columna(Sudoku, SudokuTemp):-
+	columna(Confli),
+	generarListaLugares(Sudoku, Confli, ListaLugares),
+    numero_veces(ListaLugares, 2, 2, TR2),
+    is_list(TR2),
+    %locate_list_positions(ListaLugares, Confli, TR2, IList),
+    %anyadir_posiciones_conflictivas(Confli,IList,NuevosConflictivos),
+    reemplaza(Confli,Sudoku,[],SudokuTemp,TR2,_).
+
+aplicaregla2_cuadro(Sudoku, SudokuTemp):-
+	cuadro(Confli),
+	generarListaLugares(Sudoku, Confli, ListaLugares),
+	numero_veces(ListaLugares, 2, 2, TR2),
+	is_list(TR2),
+    %locate_list_positions(ListaLugares, Confli, TR2, IList),
+    %anyadir_posiciones_conflictivas(Confli,IList,NuevosConflictivos),
+	reemplaza(Confli,Sudoku,[],SudokuTemp,TR2,_).
+
+
+anyadir_posiciones_conflictivas(Confli, IList, NuevosConflictivos):-
+	anyadir_posiciones_conflictivas_aux(Confli, IList, [], NuevosConflictivos).
+
+anyadir_posiciones_conflictivas_aux(Confli, [], _, NuevosConflictivos):-
+	append([],Confli,NuevosConflictivos).
+
+anyadir_posiciones_conflictivas_aux(Confli, [I|IList], _, NuevosConflictivos):-
+	conflictivos(I,Y),
+	union(Y, Confli, X),
+	anyadir_posiciones_conflictivas_aux(X, IList, [], NuevosConflictivos).
+
+
+
+%comprueba_si_posiciones_validas(L1,L2):-
+%	comprueba_si_posiciones_validas_aux(L1,L2).
+
+%comprueba_si_posiciones_validas_aux([],_).
+%comprueba_si_posiciones_validas_aux([L|L1],L2):-
+%	member(L,L2),
+%	comprueba_si_posiciones_validas_aux(L1,L2).
+
+%solo vale para un L1 de longitud 2.
+%comprueba_si_posiciones_validas_aux([L|_],L2):-
+%	member(L,L2).
+%comprueba_si_posiciones_validas_aux([_|L1],L2):-
+%	member(L1,L2).
+
+numero_veces([], _, _, _, T):-
+	T is 0.
+
+% L1 la lista, X longitud lista, Times numero de veces buscada, T elemento buscado, 
+numero_veces([L|L1], X, Times, T):-
+	is_list(L),
+	length(L, X),
+	numveces(L1, L, 1, K),
+	Times =:= K,
+	append([],L,T).
+
+numero_veces([L|L1], X, Times, T):-
+	is_list(L),
+	length(L, X),
+	numveces(L1, L, 1, _),
+	numero_veces(L1, X, Times, T).
+
+numveces([],_,NroAux,Nro):-
+	Nro is NroAux.
+numveces([Z|L3],X,NroAux,Nro):-
+ 	Z = X,
+ 	NroAux1 is NroAux +1,
+ 	numveces(L3,X,NroAux1,Nro).
+
+numveces([_|L3],X,NroAux,Nro):-
+	numveces(L3,X,NroAux,Nro).
+
+
+% Función para remplazar los elementos del Sudoku en la regla2.
+reemplaza(Confli,L1,LAux,L4,X,N):-
+    NAux is 0,
+	reemplaza_aux(Confli,L1,LAux,L4,X,1,NAux,N).
+
+
+%caso base de recursividad
+
+reemplaza_aux(_,_,LAux,L4,_,82,NAux,N):-
+	reverse(LAux,L4),
+	N is NAux.
+
+reemplaza_aux(Confli,L1,LAux,L4,X,Pos,NAux,N):-
+	member(Pos,Confli),
+	nth1(Pos,L1,Y),
+	is_list(Y),
+	Y == X,
+	Pos1 is Pos + 1,
+	reemplaza_aux(Confli,L1,[X|LAux],L4,X,Pos1,NAux,N).
+
+reemplaza_aux(Confli,L1,LAux,L4,X,Pos,NAux,N):-
+	member(Pos,Confli),
+	nth1(Pos,L1,Y),
+	is_list(Y),
+	Y \= X,
+	subtract(Y,X,Z),
+	Y \= Z,	
+	Pos1 is Pos + 1,
+	NAux1 is NAux + 1,
+	reemplaza_aux(Confli,L1,[Z|LAux],L4,X,Pos1,NAux1,N).
+
+reemplaza_aux(Confli,L1,LAux,L4,X,Pos,NAux,N):-
+	member(Pos,Confli),
+	nth1(Pos,L1,Y),
+	is_list(Y),
+	Y \= X,
+	subtract(Y,X,Z),
+	Y == Z,	
+	Pos1 is Pos + 1,
+	reemplaza_aux(Confli,L1,[Z|LAux],L4,X,Pos1,NAux,N).
+
+reemplaza_aux(Confli,L1,LAux,L4,X,Pos,NAux,N):-
+	member(Pos,Confli),
+	nth1(Pos,L1,Y),
+	integer(Y),
+	Pos1 is Pos + 1,
+	reemplaza_aux(Confli,L1,[Y|LAux],L4,X,Pos1,NAux,N).
+
+reemplaza_aux(Fi,L1,LAux,L4,X,Pos,NAux,N):-
+	nth1(Pos,L1,Y),
+	Pos1 is Pos + 1,
+	reemplaza_aux(Fi,L1,[Y|LAux],L4,X,Pos1,NAux,N).
+
+%% localiza las posiciones coincidentes de una lista dada.
+locate_list_positions(Lista, _, Elem, Posiciones):-
+	locate_list_position_aux(Lista, Elem, 1, [], Posiciones).
+
+locate_list_position_aux([], _, _, PosicionesAux, Posiciones):-
+	append([],PosicionesAux,Posiciones).
+locate_list_position_aux([L|Lista], Elem, X, PosicionesAux, Posiciones):-
+	is_list(L),
+	locate_list_position_aux1(L, Elem, X, P),
+	Posicion1 is X + 1,
+	locate_list_position_aux(Lista, Elem, Posicion1, [P|PosicionesAux], Posiciones).
+locate_list_position_aux([L|Lista], Elem, X, PosicionesAux, Posiciones):-
+	is_list(L),
+	%locate_list_position_aux1(L, Elem, X, P),
+	Posicion1 is X + 1,
+	locate_list_position_aux(Lista, Elem, Posicion1, PosicionesAux, Posiciones).
+locate_list_position_aux([L|Lista], Elem, X, PosicionesAux, Posiciones):-
+	integer(L),
+	%locate_list_position_aux1(L, Elem, X, P),
+	Posicion1 is X + 1,
+	locate_list_position_aux(Lista, Elem, Posicion1, PosicionesAux, Posiciones).
+
+locate_list_position_aux1([], _, _, _).
+locate_list_position_aux1(L, Elem, X, Posicion):-
+	is_list(L), 
+	is_list(Elem), 
+	L == Elem,
+	Posicion is X.
+
+
+% #######################################################################################
+% REGLA 3:
+% Si en tres lugares de una fila, columna o cuadro sólo aparecen tres números distintos, 
+%  borramos los números de las restantes listas de la fila, columna o cuadro.
+% #######################################################################################
+
+regla3_process_other_rules(SudokuIn, SudokuOut):-
+	regla0(SudokuIn, SudokuR0),
+	regla1(SudokuR0, SudokuR1),
+	regla2(SudokuR1, SudokuR2),
+	%regla3(SudokuR2, SudokuOut),
+	nl,nl,representarSUDOKU(SudokuR2).
+
+
+regla3(SudokuIn,SudokuOut):-
+  	aplicaregla3_fila(SudokuIn,SudokuTemp1),
+  	regla3_process_other_rules(SudokuTemp1, SudokuOut).
+
+regla3(SudokuIn,SudokuOut):-
+  	aplicaregla3_columna(SudokuIn,SudokuTemp1),
+  	regla3_process_other_rules(SudokuTemp1, SudokuOut).
+
+regla3(SudokuIn,SudokuOut):-
+  	aplicaregla3_cuadro(SudokuIn,SudokuTemp1),
+  	regla3_process_other_rules(SudokuTemp1, SudokuOut).
+
+regla3(SudokuIn, Sudoku_regla3):-
+	append([], SudokuIn, Sudoku_regla3).
+
+
+aplicaregla3_fila(Sudoku, SudokuTemp):-
+	fila(Confli),
+	generarListaLugares(Sudoku, Confli, ListaLugares),
+    interseccion_elementos(ListaLugares, Confli, T, LCandidatos),
+%    unificar_diferentes_de_lista(ListaLugares, LUnificados),
+%    union(T,LUnificados,P),
+%    length(P,Lp),length(T,Lt),
+%    Lp=\=Lt,
+    simplifica_sudoku_r3(Sudoku,Confli,LCandidatos,T,[],SudokuTemp).
+
+aplicaregla3_cuadro(Sudoku, SudokuTemp):-
+	cuadro(Confli),
+	generarListaLugares(Sudoku, Confli, ListaLugares),
+    interseccion_elementos(ListaLugares, Confli, T, LCandidatos),
+    %is_list(LCandidatos),
+    simplifica_sudoku_r3(Sudoku,Confli,LCandidatos,T,[],SudokuTemp).
+
+aplicaregla3_columna(Sudoku, SudokuTemp):-
+	columna(Confli),
+	generarListaLugares(Sudoku, Confli, ListaLugares),
+    interseccion_elementos(ListaLugares, Confli, T, LCandidatos),
+    %is_list(LCandidatos),
+    simplifica_sudoku_r3(Sudoku,Confli,LCandidatos,T,[],SudokuTemp).
+
+
+unificar_diferentes_de_lista(ListaLugares, X):-
+	unificar_diferentes_de_lista_aux(ListaLugares, [], X).
+
+unificar_diferentes_de_lista_aux([], Aux, X):-
+	reverse(Aux, X).
+
+unificar_diferentes_de_lista_aux([L|ListaLugares], Aux, X):-
+	is_list(L),
+	union(Aux,L,T),
+	unificar_diferentes_de_lista_aux(ListaLugares,T,X).
+
+unificar_diferentes_de_lista_aux([L|ListaLugares], Aux, X):-
+	integer(L),
+	unificar_diferentes_de_lista_aux(ListaLugares,Aux,X).
+
+
+
+%numero_veces(ListaLugares, 2, 2, TR2),
+interseccion_elementos(ListaLugares, Confli, ValoresCandidatos, LCandidatos):-
+	interseccion_elementos_aux(ListaLugares, Confli, 1, ValoresCandidatos, LCandidatos).
+	%,	tiene_simplificacion(ListaLugares, ValoresCandidatos,LCandidatos).
+
+interseccion_elementos_aux(ListaLugares, Confli, Pos, T, LCandidatos):-
+	nth1(Pos, ListaLugares, C),
+	proper_length(C, 3),
+	comprueba_validez_interseccion(ListaLugares, Confli, Pos, C, LCandidatos),
+	append([],C,T).
+%	NewPos is Pos + 1,
+%	nth1(Pos, Confli, X),
+	%interseccion_elementos_aux(ListaLugares, Confli, 10, Posiciones, LCandidatos).
+
+interseccion_elementos_aux(ListaLugares, Confli, Pos, T, LCandidatos):-
+	%nth1(Pos, ListaLugares, C),
+	NewPos is Pos + 1,
+	interseccion_elementos_aux(ListaLugares, Confli, NewPos, T, LCandidatos).
+
+
+comprueba_validez_interseccion(ListaLugares, Confli, Pos, C, PosCandidatos):-
+	comprueba_validez_interseccion_aux(ListaLugares, Confli, C, 1, [], 0, Cuenta, PosCandidatos),
+	Cuenta =:= 3.
+
+
+comprueba_validez_interseccion_aux([], _, _, _, TR, X, Cuenta, POSInterseccion):-
+	append([],TR, POSInterseccion), Cuenta is X.
+
+comprueba_validez_interseccion_aux([T|ListaLugares], Confli, C, Pos, TR, X, Cuenta, Interseccion):-
+	is_list(T),
+	length(T,2),
+	intersection(C,T,P),
+	length(P,2),
+	NewPos is Pos + 1,
+	nth1(Pos,Confli,Q),
+	NCuenta is X + 1,
+	comprueba_validez_interseccion_aux(ListaLugares, Confli, C, NewPos, [Q|TR], NCuenta, Cuenta, Interseccion).
+
+comprueba_validez_interseccion_aux([T|ListaLugares], Confli, C, Pos, TR, X, Cuenta, Interseccion):-
+	is_list(T),
+	length(T,3),
+	intersection(C,T,P),
+	length(P,3),
+	NewPos is Pos + 1,
+	nth1(Pos,Confli,Q),
+	NCuenta is X + 1,
+	comprueba_validez_interseccion_aux(ListaLugares, Confli, C, NewPos, [Q|TR], NCuenta, Cuenta, Interseccion).
+
+comprueba_validez_interseccion_aux([T|ListaLugares], Confli, C, Pos, TR, X, Cuenta, Interseccion):-
+	NewPos is Pos + 1,
+	comprueba_validez_interseccion_aux(ListaLugares, Confli, C, NewPos, TR, X, Cuenta, Interseccion).
+
+
+
+tiene_simplificacion(ListaLugares, ValoresCandidatos, LCandidatos):-
+	tiene_simplificacion_aux(ListaLugares, ValoresCandidatos, LCandidatos, 1, 0, CuentaListas),
+	CuentaListas > 0.
+
+tiene_simplificacion_aux([], ValoresCandidatos, LCandidatos, Result, Aux, CuentaListas):-
+	CuentaListas is Aux.
+
+tiene_simplificacion_aux([L|ListaLugares], ValoresCandidatos, LCandidatos, Ini, Aux, CuentaListas):-
+	\+member(Ini, LCandidatos),
+	is_list(L),
+	cuenta_apariciones(L,ValoresCandidatos,X),
+	X > 1,
+	NewIni is Ini + 1,
+	NewAux is Aux + 1,
+	tiene_simplificacion_aux(ListaLugares, ValoresCandidatos, LCandidatos, NewIni, NewAux, CuentaListas).
+
+% Si es un entero o una posición de cambio.
+tiene_simplificacion_aux([L|ListaLugares], ValoresCandidatos, LCandidatos, Ini, Aux, CuentaListas):-
+	member(Ini, LCandidatos),
+	NewIni is Ini + 1,
+	tiene_simplificacion_aux(ListaLugares, ValoresCandidatos, LCandidatos, NewIni, Aux, CuentaListas).
+
+tiene_simplificacion_aux([L|ListaLugares], ValoresCandidatos, LCandidatos, Ini, Aux, CuentaListas):-
+	integer(L),
+	NewIni is Ini + 1,
+	tiene_simplificacion_aux(ListaLugares, ValoresCandidatos, LCandidatos, NewIni, Aux, CuentaListas).
+
+
+cuenta_apariciones(L, VCandidatos, X):-
+	cuenta_apariciones_aux(L, VCandidatos, 0, X).
+
+cuenta_apariciones_aux([], _, Cuenta, X):-
+	X is Cuenta.
+
+cuenta_apariciones_aux([E|L], VCandidatos, Cuenta, X):-
+	member(E, VCandidatos),
+	NewCuenta is Cuenta + 1,
+	cuenta_apariciones_aux(L, VCandidatos, NewCuenta, X).
+
+cuenta_apariciones_aux([E|L], VCandidatos, Cuenta, X):-
+	cuenta_apariciones_aux(L, VCandidatos, Cuenta, X).
+
+
+
+
+
+simplifica_sudoku_r3(Sudoku, Confli, PosMantenidas, ElementosEliminar, WorkingSudoku, SudokuTemp):-
+	simplifica_sudoku_r3_aux(Sudoku, Confli, PosMantenidas, ElementosEliminar, WorkingSudoku, 1, SudokuTemp).
+
+simplifica_sudoku_r3_aux(_, _, _, _, WorkingSudoku, 82, SudokuTemp):-
+	reverse(WorkingSudoku, SudokuTemp).
+
+% Elementos del sudoku que sean conflictivos y no pertenezcan a las posiciones a mantener.
+simplifica_sudoku_r3_aux(Sudoku, Confli, PosMantenidas, ElementosEliminar, WorkingSudoku, PosActual, SudokuTemp):-
+	member(PosActual, Confli),
+	\+member(PosActual, PosMantenidas),
+	nth1(PosActual, Sudoku, X),
+	is_list(X),
+	subtract(X, ElementosEliminar, E),
+	NewPos is PosActual + 1,
+	simplifica_sudoku_r3_aux(Sudoku, Confli, PosMantenidas, ElementosEliminar, [E|WorkingSudoku], NewPos, SudokuTemp).
+
+
+% Cualquier otro elemento
+simplifica_sudoku_r3_aux(Sudoku, Confli, PosMantenidas, ElementosEliminar, WorkingSudoku, PosActual, SudokuTemp):-
+	nth1(PosActual, Sudoku, X),
+	NewPos is PosActual + 1,
+	simplifica_sudoku_r3_aux(Sudoku, Confli, PosMantenidas, ElementosEliminar, [X|WorkingSudoku], NewPos, SudokuTemp).
+
+
+
