@@ -50,8 +50,7 @@ simplificar_sudoku(Sudoku,Sudoku_posibilidades_mod):-
 	regla0(Sudoku_posibilidades,L),
 	regla1(L,L1),
 	regla2(L1,L2),
-	regla3(L2,L3),
-	append([],L3,Sudoku_posibilidades_mod),
+	regla3(L2,Sudoku_posibilidades_mod),
 	representarSUDOKU(Sudoku_posibilidades_mod).
 
 % #######################################################################################	
@@ -154,13 +153,7 @@ generarListaLugaresAux(_,[],Z,L2):-
 % eliminamos de los lugares en los que aparezca de los que son conflictivos.
 % Resuelve los Sudokus Faciles (1-4) y Simplica los dificiles (5-7)
 % #######################################################################################
-% determinar si es lista o numero.
-% si número, lo dejamos como está.
-% si es lista, 
-% 	[Si la lista solo contiene 1 numero, eliminar número de los lugares conflictivos.] 
-%	[Si la lista contiene más de uno, lo dejamos].
 
-%regla inicial
 regla0(SudokuIn,SudokuRegla0):-	
 	append([],SudokuIn,L1),
 	append([],SudokuIn,L2),
@@ -288,28 +281,20 @@ mirar(E, ListaLugares, Veces, R):-
 	\+member(V, ListaLugares),
 	R is V.
 
-% Compruebo si E ya esta seleccionado.
-
+% #######################################################################################
+% Funciones para regenerar el Sudoku a partir de lo encontrado en la regla1.
+% #######################################################################################
 
 % Eliminamos el Elemento E, encontrado en Posicion de la fila o columna o cuadro.
 redo_sudoku(fi,Sudoku, E, Posicion, Sudoku_nuevo):-
-	%columna(X), member(Posicion, X),
-	%cuadro(Y), member(Posicion, Y),
-	%append(X,Y,Ilist),
 	conflictivos(Posicion,Ilist),
 	redo_sudoku_aux(Sudoku, E, Posicion, 1, Ilist, [], Sudoku_nuevo).
 
 redo_sudoku(co,Sudoku, E, Posicion, Sudoku_nuevo):-
-	%fila(X), member(Posicion, X),
-	%cuadro(Y), member(Posicion, Y),
-	%append(X,Y,Ilist),
 	conflictivos(Posicion,Ilist),
 	redo_sudoku_aux(Sudoku, E, Posicion, 1, Ilist, [], Sudoku_nuevo).
 
 redo_sudoku(cu,Sudoku, E, Posicion, Sudoku_nuevo):-
-	%fila(X), member(Posicion, X),
-	%columna(Y), member(Posicion, Y),
-	%append(X,Y,Ilist),
 	conflictivos(Posicion,Ilist),
 	redo_sudoku_aux(Sudoku, E, Posicion, 1, Ilist, [], Sudoku_nuevo).
 
@@ -336,13 +321,7 @@ redo_sudoku_aux([S|Sudoku], E, Posicion, P, Ilist, Sudoku_nuevo, SudokuFinal):-
 
 
 eliminar_valor([], _, L1, Vals):-
-%	length(L1, X),
-	%X > 1,
 	reverse(L1, Vals).
-%eliminar_valor([], E, L1, Vals):-
-%	length(L1, X),
-%	X =:= 1,
-%	nth1(1,L1,Vals).
 eliminar_valor([I|S], E, L1, Vals):-
 	I =:= E,
 	eliminar_valor(S, E, L1, Vals).
@@ -402,9 +381,6 @@ replace_aux([A|L1], I, Nv, Pos, Temp, L2):-
 	replace_aux(L1, I, Nv, Pos1, [A|Temp], L2).
 
 
-%	unificar_listas(ListaLugares,[],L).
-	
-%(x, lista, natural)
 % Elemento X que aparece N veces.
 unifica(Lista, X):-
 	unifica_aux(Lista, [], X).
@@ -443,7 +419,6 @@ validos(9).
 % Si dos números aparecen solos en dos lugares distintos de una fila, columna o cuadro, 
 %  los borramos del resto de lugares de la fila, columna o cuadro correspondiente.
 % #######################################################################################
-% ---------------------------------------------------------------------------------------
 regla2_process_other_rules(SudokuIn, SudokuOut):-
 	regla0(SudokuIn, SudokuR0),
 	regla1(SudokuR0, SudokuR1),
@@ -490,8 +465,6 @@ aplicaregla2_fila(Sudoku, SudokuTemp):-
 	generarListaLugares(Sudoku, Confli, ListaLugares),
     numero_veces(ListaLugares, 2, 2, TR2),
     is_list(TR2),
-    %locate_list_positions(ListaLugares, Confli, TR2, IList),
-    %anyadir_posiciones_conflictivas(Confli,IList,NuevosConflictivos),
     reemplaza(Confli,Sudoku,[],SudokuTemp,TR2,_).
 
 aplicaregla2_columna(Sudoku, SudokuTemp):-
@@ -499,8 +472,6 @@ aplicaregla2_columna(Sudoku, SudokuTemp):-
 	generarListaLugares(Sudoku, Confli, ListaLugares),
     numero_veces(ListaLugares, 2, 2, TR2),
     is_list(TR2),
-    %locate_list_positions(ListaLugares, Confli, TR2, IList),
-    %anyadir_posiciones_conflictivas(Confli,IList,NuevosConflictivos),
     reemplaza(Confli,Sudoku,[],SudokuTemp,TR2,_).
 
 aplicaregla2_cuadro(Sudoku, SudokuTemp):-
@@ -508,8 +479,6 @@ aplicaregla2_cuadro(Sudoku, SudokuTemp):-
 	generarListaLugares(Sudoku, Confli, ListaLugares),
 	numero_veces(ListaLugares, 2, 2, TR2),
 	is_list(TR2),
-    %locate_list_positions(ListaLugares, Confli, TR2, IList),
-    %anyadir_posiciones_conflictivas(Confli,IList,NuevosConflictivos),
 	reemplaza(Confli,Sudoku,[],SudokuTemp,TR2,_).
 
 
@@ -524,24 +493,6 @@ anyadir_posiciones_conflictivas_aux(Confli, [I|IList], _, NuevosConflictivos):-
 	union(Y, Confli, X),
 	anyadir_posiciones_conflictivas_aux(X, IList, [], NuevosConflictivos).
 
-
-
-%comprueba_si_posiciones_validas(L1,L2):-
-%	comprueba_si_posiciones_validas_aux(L1,L2).
-
-%comprueba_si_posiciones_validas_aux([],_).
-%comprueba_si_posiciones_validas_aux([L|L1],L2):-
-%	member(L,L2),
-%	comprueba_si_posiciones_validas_aux(L1,L2).
-
-%solo vale para un L1 de longitud 2.
-%comprueba_si_posiciones_validas_aux([L|_],L2):-
-%	member(L,L2).
-%comprueba_si_posiciones_validas_aux([_|L1],L2):-
-%	member(L1,L2).
-
-numero_veces([], _, _, _, T):-
-	T is 0.
 
 % L1 la lista, X longitud lista, Times numero de veces buscada, T elemento buscado, 
 numero_veces([L|L1], X, Times, T):-
@@ -567,15 +518,15 @@ numveces([Z|L3],X,NroAux,Nro):-
 numveces([_|L3],X,NroAux,Nro):-
 	numveces(L3,X,NroAux,Nro).
 
-
-% Función para remplazar los elementos del Sudoku en la regla2.
+% #######################################################################################
+% Predicados para regenerar el Sudoku a partir de lo encontrado en la regla2.
+% #######################################################################################
 reemplaza(Confli,L1,LAux,L4,X,N):-
     NAux is 0,
 	reemplaza_aux(Confli,L1,LAux,L4,X,1,NAux,N).
 
 
-%caso base de recursividad
-
+%caso base.
 reemplaza_aux(_,_,LAux,L4,_,82,NAux,N):-
 	reverse(LAux,L4),
 	N is NAux.
@@ -621,42 +572,13 @@ reemplaza_aux(Fi,L1,LAux,L4,X,Pos,NAux,N):-
 	Pos1 is Pos + 1,
 	reemplaza_aux(Fi,L1,[Y|LAux],L4,X,Pos1,NAux,N).
 
-%% localiza las posiciones coincidentes de una lista dada.
-locate_list_positions(Lista, _, Elem, Posiciones):-
-	locate_list_position_aux(Lista, Elem, 1, [], Posiciones).
-
-locate_list_position_aux([], _, _, PosicionesAux, Posiciones):-
-	append([],PosicionesAux,Posiciones).
-locate_list_position_aux([L|Lista], Elem, X, PosicionesAux, Posiciones):-
-	is_list(L),
-	locate_list_position_aux1(L, Elem, X, P),
-	Posicion1 is X + 1,
-	locate_list_position_aux(Lista, Elem, Posicion1, [P|PosicionesAux], Posiciones).
-locate_list_position_aux([L|Lista], Elem, X, PosicionesAux, Posiciones):-
-	is_list(L),
-	%locate_list_position_aux1(L, Elem, X, P),
-	Posicion1 is X + 1,
-	locate_list_position_aux(Lista, Elem, Posicion1, PosicionesAux, Posiciones).
-locate_list_position_aux([L|Lista], Elem, X, PosicionesAux, Posiciones):-
-	integer(L),
-	%locate_list_position_aux1(L, Elem, X, P),
-	Posicion1 is X + 1,
-	locate_list_position_aux(Lista, Elem, Posicion1, PosicionesAux, Posiciones).
-
-locate_list_position_aux1([], _, _, _).
-locate_list_position_aux1(L, Elem, X, Posicion):-
-	is_list(L), 
-	is_list(Elem), 
-	L == Elem,
-	Posicion is X.
-
+% ---------------------------------------------------------------------------------------
 
 % #######################################################################################
 % REGLA 3:
 % Si en tres lugares de una fila, columna o cuadro sólo aparecen tres números distintos, 
 %  borramos los números de las restantes listas de la fila, columna o cuadro.
 % #######################################################################################
-
 regla3_process_other_rules(SudokuIn, SudokuOut):-
 	regla0(SudokuIn, SudokuR0),
 	regla1(SudokuR0, SudokuR1),
@@ -701,7 +623,9 @@ aplicaregla3_columna(Sudoku, SudokuTemp):-
 	resolver_posiciones_r3(Confli, Pos, PosSudoku),
     simplifica_sudoku_r3(Sudoku,Confli,PosSudoku,Candidatos,[],SudokuTemp).
 
-
+% #######################################################################################
+% Predicados para regenerar el Sudoku a partir de lo encontrado en la regla3.
+% #######################################################################################
 simplifica_sudoku_r3(Sudoku, Confli, PosMantenidas, ElementosEliminar, WorkingSudoku, SudokuTemp):-
 	simplifica_sudoku_r3_aux(Sudoku, Confli, PosMantenidas, ElementosEliminar, WorkingSudoku, 1, SudokuTemp).
 
@@ -726,13 +650,15 @@ simplifica_sudoku_r3_aux(Sudoku, Confli, PosMantenidas, ElementosEliminar, Worki
 	simplifica_sudoku_r3_aux(Sudoku, Confli, PosMantenidas, ElementosEliminar, [X|WorkingSudoku], NewPos, SudokuTemp).
 
 
+% #######################################################################################
+% Predicados para el candidato de la regla 3.
+% #######################################################################################
 % elegir_candidato_r3([[4,7,8,9],[5,7,8,9],[4,5,7,8,9],[2,5,7,8,9],1,[2,5,7,9],3,6,[4,5,8]], Candidatos, Posiciones).
 % elegir_candidato_r3([6, [5, 8], 2, 4, [3, 5, 8], [3, 5], 1, 9, 7], Candidatos, Posiciones).
 % elegir_candidato_r3([[1,4,7,8,9], 3, [1,4,5,7,8,9], [5,7,8,9], [5,8], 6, [5,8], 2, [4,5,8]], Candidatos, Posiciones).
 % elegir_candidato_r3([4,[3,5,8],[3,5],[2,5,7,8,9],1,[2,5,7,9],[7,9],[5,8],6], Candidatos, Posiciones).
-
 elegir_candidato_r3(ListaLugares, Candidatos, Posiciones):-
-	union_elementos_distintos_2(ListaLugares, Candidatos),
+	union_elementos_distintos(ListaLugares, Candidatos),
 	contar_lugares(ListaLugares, Candidatos, NumUnicos, Posiciones, NumSimplificables),
 	length(NumUnicos,3),
 	length(NumSimplificables,LNS),
@@ -749,49 +675,11 @@ resolver_posiciones_r3_aux(Confli, [P|Pos], TPos, PosSudoku):-
 
 
 
-
-union_elementos_distintos(ListaLugares, X):-
-	union_elementos_distintos_aux(ListaLugares, [], X).
-
-union_elementos_distintos_aux([LL|ListaLugares], LAux, X):-
-	is_list(LL),
-	append(LAux,LL,L1),
-	union_elementos_distintos_aux_inner(ListaLugares, L1, X),
-	length(X,3).
-
-union_elementos_distintos_aux([LL|ListaLugares], LAux, X):-
-	is_list(LL),
-	union_elementos_distintos_aux(ListaLugares, LAux, X).
-
-union_elementos_distintos_aux([LL|ListaLugares], LAux, X):-
-	integer(LL),
-	union_elementos_distintos_aux(ListaLugares, LAux, X).
-
-
-union_elementos_distintos_aux_inner([], LAux, X):-
-	append([],LAux, X).
-
-union_elementos_distintos_aux_inner([LL|ListaLugares], LAux, X):-
-	is_list(LL),
-	union(LAux,LL,L1),
-	union_elementos_distintos_aux_inner(ListaLugares,L1,X).
-
-union_elementos_distintos_aux_inner([LL|ListaLugares], LAux, X):-
-	is_list(LL),
-	union(LAux,LL,L1),
-	union_elementos_distintos_aux_inner(ListaLugares,L1,X).
-
-union_elementos_distintos_aux_inner([LL|ListaLugares], LAux, X):-
-	integer(LL),
-	union_elementos_distintos_aux_inner(ListaLugares,LAux,X).
-
-
-
-
-
+% #######################################################################################
+% Predicados para determinar si se puede aplicar la regla 3.
+% #######################################################################################
 %contar_lugares([[4,7,8,9], [5,7,8,9],  [4,5,7,8,9],  [2,5,7,8,9],  1,  [2,5,7,9],  3,  6,  [4,5,8]], [4,5,8], X, Y).
 %contar_lugares([[1,4,7,8,9],3,[1,4,5,7,8,9],[5,7,8,9],[5,8],6,[5,8] ,2,[4,5,8]],[4,5,8]).
-
 contar_lugares(ListaLugares, Candidatos, NumUnicos, Posiciones, NumSimplificables):-
 	contar_lugares_aux(ListaLugares, Candidatos, [], [], NumUnicos, 1, [], Posiciones, NumSimplificables).
 
@@ -820,46 +708,49 @@ contar_lugares_aux([_|ListaLugares], Candidatos, NU, NS, NumUnicos, Ps, Pos, Pos
 	contar_lugares_aux(ListaLugares, Candidatos, NU, NS, NumUnicos, NPs, Pos, Posiciones, NumSimplificables).
 
 
-
+% #######################################################################################
+% Predicados para unificar elementos en base a lo especificado en la regla3.
+% #######################################################################################
 % union_elementos_distintos_2([4,[3,5,8],[3,5],[2,5,7,8,9],1,[2,5,7,9],[7,9],[5,8],6], Candidatos).
-union_elementos_distintos_2(ListaLugares, X):-
-	union_elementos_distintos_aux_2(ListaLugares, ListaLugares, [], X).
+union_elementos_distintos(ListaLugares, X):-
+	union_elementos_distintos_aux(ListaLugares, ListaLugares, [], X).
 
-union_elementos_distintos_aux_2([], _, LAux, X):-
+union_elementos_distintos_aux([], _, LAux, X):-
 	append([],LAux,X).
 
-union_elementos_distintos_aux_2([LL|ListaLugares], ListaLugaresAux, LAux, X):-
+union_elementos_distintos_aux([LL|_], ListaLugaresAux, _, X):-
 	is_list(LL),
 	length(LL,3),
-	union_elementos_distintos_aux_inner_2(ListaLugaresAux, LL, [], X),
+	union_elementos_distintos_aux_inner(ListaLugaresAux, LL, [], X),
 	length(X,3).
 
-union_elementos_distintos_aux_2([LL|ListaLugares], ListaLugaresAux, LAux, X):-
+union_elementos_distintos_aux([LL|ListaLugares], ListaLugaresAux, LAux, X):-
 	is_list(LL),
-	union_elementos_distintos_aux_2(ListaLugares,ListaLugaresAux, LAux, X).
+	union_elementos_distintos_aux(ListaLugares,ListaLugaresAux, LAux, X).
 
-union_elementos_distintos_aux_2([LL|ListaLugares], ListaLugaresAux, LAux, X):-
+union_elementos_distintos_aux([LL|ListaLugares], ListaLugaresAux, LAux, X):-
 	integer(LL),
-	union_elementos_distintos_aux_2(ListaLugares,ListaLugaresAux, LAux, X).
+	union_elementos_distintos_aux(ListaLugares,ListaLugaresAux, LAux, X).
 
-
-union_elementos_distintos_aux_inner_2([], Objetivo, LAux, X):-
+union_elementos_distintos_aux_inner([], _, LAux, X):-
 	append([],LAux, X).
 
-union_elementos_distintos_aux_inner_2([LL|ListaLugares], Objetivo, LAux, X):-
+union_elementos_distintos_aux_inner([_], Objetivo, LAux, X):-
 	Objetivo == LAux,
 	append([],LAux, X).
 
-union_elementos_distintos_aux_inner_2([LL|ListaLugares], Objetivo, LAux, X):-
+union_elementos_distintos_aux_inner([LL|ListaLugares], Objetivo, LAux, X):-
 	is_list(LL),
 	length(LL,2),
 	union(LAux,LL,L1),
-	union_elementos_distintos_aux_inner_2(ListaLugares, Objetivo,L1,X).
+	union_elementos_distintos_aux_inner(ListaLugares, Objetivo,L1,X).
 
-union_elementos_distintos_aux_inner_2([LL|ListaLugares], Objetivo, LAux, X):-
+union_elementos_distintos_aux_inner([LL|ListaLugares], Objetivo, LAux, X):-
 	is_list(LL),
-	union_elementos_distintos_aux_inner_2(ListaLugares, Objetivo,LAux,X).
+	union_elementos_distintos_aux_inner(ListaLugares, Objetivo,LAux,X).
 
-union_elementos_distintos_aux_inner_2([LL|ListaLugares], Objetivo, LAux, X):-
+union_elementos_distintos_aux_inner([LL|ListaLugares], Objetivo, LAux, X):-
 	integer(LL),
-	union_elementos_distintos_aux_inner_2(ListaLugares, Objetivo,LAux,X).
+	union_elementos_distintos_aux_inner(ListaLugares, Objetivo,LAux,X).
+
+% ---------------------------------------------------------------------------------------
