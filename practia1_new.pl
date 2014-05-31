@@ -44,13 +44,16 @@ hardTest(X):- ejemploSudokuDificil(X,L),
 
 
 simplificar_sudoku(Sudoku,Sudoku_posibilidades_mod):-
+	nl,write('Sudoku Original:'),nl,write('----------------'),nl,
 	representarSUDOKU(Sudoku),nl,
 	generarPosibilidadesSUDOKU(Sudoku,Sudoku_posibilidades),
+	nl,write('Sudoku Posibilidades:'),nl,write('---------------------'),nl,
 	representarSUDOKU(Sudoku_posibilidades),nl,
 	regla0(Sudoku_posibilidades,L),
 	regla1(L,L1),
 	regla2(L1,L2),
 	regla3(L2,Sudoku_posibilidades_mod),
+	nl,write('Sudoku Simplificado:'),nl,write('--------------------'),nl,
 	representarSUDOKU(Sudoku_posibilidades_mod).
 
 % #######################################################################################	
@@ -423,27 +426,6 @@ regla2_process_other_rules(SudokuIn, SudokuOut):-
 	regla0(SudokuIn, SudokuR0),
 	regla1(SudokuR0, SudokuR1),
 	regla2(SudokuR1, SudokuOut).
-
-
-regla2(SudokuIn,SudokuOut):-
-  	aplicaregla2_fila(SudokuIn,SudokuTemp1),
-  	aplicaregla2_cuadro(SudokuTemp1,SudokuTemp2),
-  	regla2_process_other_rules(SudokuTemp2, SudokuOut).
-
-regla2(SudokuIn,SudokuOut):-
-  	aplicaregla2_columna(SudokuIn,SudokuTemp1),
-  	aplicaregla2_cuadro(SudokuTemp1,SudokuTemp2),
-  	regla2_process_other_rules(SudokuTemp2, SudokuOut).
-
-regla2(SudokuIn,SudokuOut):-
-  	aplicaregla2_cuadro(SudokuIn,SudokuTemp1),
-  	aplicaregla2_fila(SudokuTemp1,SudokuTemp2),
-  	regla2_process_other_rules(SudokuTemp2, SudokuOut).
-
-regla2(SudokuIn,SudokuOut):-
-	aplicaregla2_cuadro(SudokuIn,SudokuTemp1),
-	aplicaregla2_columna(SudokuTemp1,SudokuTemp2),
-  	regla2_process_other_rules(SudokuTemp2, SudokuOut).
 
 regla2(SudokuIn,SudokuOut):-
   	aplicaregla2_columna(SudokuIn,SudokuTemp2),
