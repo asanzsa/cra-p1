@@ -661,12 +661,13 @@ regla3_process_other_rules(SudokuIn, SudokuOut):-
 	regla0(SudokuIn, SudokuR0),
 	regla1(SudokuR0, SudokuR1),
 	regla2(SudokuR1, SudokuR2),
-	%regla3(SudokuR2, SudokuOut),
-	nl,nl,representarSUDOKU(SudokuR2).
+	regla3(SudokuR2, SudokuOut).
 
 
 regla3(SudokuIn,SudokuOut):-
   	aplicaregla3_fila(SudokuIn,SudokuTemp1),
+  	%aplicaregla3_columna(SudokuTemp1,SudokuTemp2),
+  	%aplicaregla3_cuadro(SudokuTemp2,SudokuTemp3),
   	regla3_process_other_rules(SudokuTemp1, SudokuOut).
 
 regla3(SudokuIn,SudokuOut):-
@@ -684,26 +685,28 @@ regla3(SudokuIn, Sudoku_regla3):-
 aplicaregla3_fila(Sudoku, SudokuTemp):-
 	fila(Confli),
 	generarListaLugares(Sudoku, Confli, ListaLugares),
-    interseccion_elementos(ListaLugares, Confli, T, LCandidatos),
+    %interseccion_elementos(ListaLugares, Confli, T, LCandidatos),
+    elegir_candidato_r3(ListaLugares, Candidatos, Pos),
+	resolver_posiciones_r3(Confli, Pos, PosSudoku),
 %    unificar_diferentes_de_lista(ListaLugares, LUnificados),
 %    union(T,LUnificados,P),
 %    length(P,Lp),length(T,Lt),
 %    Lp=\=Lt,
-    simplifica_sudoku_r3(Sudoku,Confli,LCandidatos,T,[],SudokuTemp).
+    simplifica_sudoku_r3(Sudoku,Confli,PosSudoku,Candidatos,[],SudokuTemp).
 
 aplicaregla3_cuadro(Sudoku, SudokuTemp):-
 	cuadro(Confli),
 	generarListaLugares(Sudoku, Confli, ListaLugares),
-    interseccion_elementos(ListaLugares, Confli, T, LCandidatos),
-    %is_list(LCandidatos),
-    simplifica_sudoku_r3(Sudoku,Confli,LCandidatos,T,[],SudokuTemp).
+    elegir_candidato_r3(ListaLugares, Candidatos, Pos),
+	resolver_posiciones_r3(Confli, Pos, PosSudoku),
+    simplifica_sudoku_r3(Sudoku,Confli,PosSudoku,Candidatos,[],SudokuTemp).
 
 aplicaregla3_columna(Sudoku, SudokuTemp):-
 	columna(Confli),
 	generarListaLugares(Sudoku, Confli, ListaLugares),
-    interseccion_elementos(ListaLugares, Confli, T, LCandidatos),
-    %is_list(LCandidatos),
-    simplifica_sudoku_r3(Sudoku,Confli,LCandidatos,T,[],SudokuTemp).
+    elegir_candidato_r3(ListaLugares, Candidatos, Pos),
+	resolver_posiciones_r3(Confli, Pos, PosSudoku),
+    simplifica_sudoku_r3(Sudoku,Confli,PosSudoku,Candidatos,[],SudokuTemp).
 
 
 unificar_diferentes_de_lista(ListaLugares, X):-
@@ -725,8 +728,8 @@ unificar_diferentes_de_lista_aux([L|ListaLugares], Aux, X):-
 
 %numero_veces(ListaLugares, 2, 2, TR2),
 interseccion_elementos(ListaLugares, Confli, ValoresCandidatos, LCandidatos):-
-	interseccion_elementos_aux(ListaLugares, Confli, 1, ValoresCandidatos, LCandidatos).
-	%,	tiene_simplificacion(ListaLugares, ValoresCandidatos,LCandidatos).
+	interseccion_elementos_aux(ListaLugares, Confli, 1, ValoresCandidatos, LCandidatos)
+	,	tiene_simplificacion(ListaLugares, ValoresCandidatos,LCandidatos).
 
 interseccion_elementos_aux(ListaLugares, Confli, Pos, T, LCandidatos):-
 	nth1(Pos, ListaLugares, C),
@@ -779,7 +782,7 @@ comprueba_validez_interseccion_aux([T|ListaLugares], Confli, C, Pos, TR, X, Cuen
 
 tiene_simplificacion(ListaLugares, ValoresCandidatos, LCandidatos):-
 	tiene_simplificacion_aux(ListaLugares, ValoresCandidatos, LCandidatos, 1, 0, CuentaListas),
-	CuentaListas > 0.
+	CuentaListas > 3.
 
 tiene_simplificacion_aux([], ValoresCandidatos, LCandidatos, Result, Aux, CuentaListas):-
 	CuentaListas is Aux.
@@ -848,3 +851,98 @@ simplifica_sudoku_r3_aux(Sudoku, Confli, PosMantenidas, ElementosEliminar, Worki
 
 
 
+
+
+
+
+%elegir_candidato_r3([[4,7,8,9],[5,7,8,9],[4,5,7,8,9],[2,5,7,8,9],1,[2,5,7,9],3,6,[4,5,8]], Candidatos, Posiciones).
+%elegir_candidato_r3([6, [5, 8], 2, 4, [3, 5, 8], [3, 5], 1, 9, 7], Candidatos, Posiciones).
+% elegir_candidato_r3([[1,4,7,8,9], 3, [1,4,5,7,8,9], [5,7,8,9], [5,8], 6, [5,8], 2, [4,5,8]], Candidatos, Posiciones).
+elegir_candidato_r3(ListaLugares, Candidatos, Posiciones):-
+	union_elementos_distintos(ListaLugares, Candidatos),
+	contar_lugares(ListaLugares, Candidatos, NumUnicos, Posiciones, NumSimplificables),
+	length(NumUnicos,3),
+	length(NumSimplificables,LNS),
+	LNS > 0.
+
+
+resolver_posiciones_r3(Confli, Pos, PosSudoku):-
+	resolver_posiciones_r3_aux(Confli, Pos, [], PosSudoku).
+
+resolver_posiciones_r3_aux(_, [], TPos, PosSudoku):-
+	append([],TPos,PosSudoku).
+resolver_posiciones_r3_aux(Confli, [P|Pos], TPos, PosSudoku):-
+	nth1(P,Confli,X),
+	resolver_posiciones_r3_aux(Confli, Pos, [X|TPos], PosSudoku).
+
+
+
+
+union_elementos_distintos(ListaLugares, X):-
+	union_elementos_distintos_aux(ListaLugares, [], X).
+
+union_elementos_distintos_aux([LL|ListaLugares], LAux, X):-
+	is_list(LL),
+	append(LAux,LL,L1),
+	union_elementos_distintos_aux_inner(ListaLugares, L1, X),
+	length(X,3).
+
+union_elementos_distintos_aux([LL|ListaLugares], LAux, X):-
+	is_list(LL),
+	union_elementos_distintos_aux(ListaLugares, LAux, X).
+
+union_elementos_distintos_aux([LL|ListaLugares], LAux, X):-
+	integer(LL),
+	union_elementos_distintos_aux(ListaLugares, LAux, X).
+
+
+union_elementos_distintos_aux_inner([], LAux, X):-
+	append([],LAux, X).
+
+union_elementos_distintos_aux_inner([LL|ListaLugares], LAux, X):-
+	is_list(LL),
+	union(LAux,LL,L1),
+	union_elementos_distintos_aux_inner(ListaLugares,L1,X).
+
+union_elementos_distintos_aux_inner([LL|ListaLugares], LAux, X):-
+	is_list(LL),
+	union(LAux,LL,L1),
+	union_elementos_distintos_aux_inner(ListaLugares,L1,X).
+
+union_elementos_distintos_aux_inner([LL|ListaLugares], LAux, X):-
+	integer(LL),
+	union_elementos_distintos_aux_inner(ListaLugares,LAux,X).
+
+
+
+
+
+%contar_lugares([[4,7,8,9], [5,7,8,9],  [4,5,7,8,9],  [2,5,7,8,9],  1,  [2,5,7,9],  3,  6,  [4,5,8]], [4,5,8], X, Y).
+%contar_lugares([[1,4,7,8,9],3,[1,4,5,7,8,9],[5,7,8,9],[5,8],6,[5,8] ,2,[4,5,8]],[4,5,8]).
+
+contar_lugares(ListaLugares, Candidatos, NumUnicos, Posiciones, NumSimplificables):-
+	contar_lugares_aux(ListaLugares, Candidatos, [], [], NumUnicos, 1, [], Posiciones, NumSimplificables).
+
+contar_lugares_aux([], Candidatos, NU, NS, NumUnicos, Ps, Pos, Posiciones, NumSimplificables):-
+	append([],NU,NumUnicos),
+	append([],NS,NumSimplificables),
+	append([],Pos,Posiciones).
+
+contar_lugares_aux([LL|ListaLugares], Candidatos, NU, NS, NumUnicos, Ps, Pos, Posiciones, NumSimplificables):-
+	is_list(LL),
+	subtract(LL,Candidatos,  V),
+	length(V, 0),
+	NPs is Ps +1,
+	contar_lugares_aux(ListaLugares, Candidatos, [LL|NU], NS, NumUnicos, NPs, [Ps|Pos], Posiciones, NumSimplificables).
+
+contar_lugares_aux([LL|ListaLugares], Candidatos, NU, NS, NumUnicos, Ps, Pos, Posiciones, NumSimplificables):-
+	is_list(LL),
+	subtract(LL, Candidatos, V),
+	length(V, X),
+	X > 0,
+	NPs is Ps +1,
+	contar_lugares_aux(ListaLugares, Candidatos, NU, [LL|NS], NumUnicos, NPs, Pos, Posiciones, NumSimplificables).
+
+contar_lugares_aux([LL|ListaLugares], Candidatos, NU, NS, NumUnicos, Ps, Pos, Posiciones, NumSimplificables):-
+	NPs is Ps +1,
+	contar_lugares_aux(ListaLugares, Candidatos, NU, NS, NumUnicos, NPs, Pos, Posiciones, NumSimplificables).
