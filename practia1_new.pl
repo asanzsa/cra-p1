@@ -51,7 +51,6 @@ simplificar_sudoku(Sudoku,Sudoku_posibilidades_mod):-
 	representarSUDOKU(Sudoku_posibilidades),nl,
 	regla0(Sudoku_posibilidades,L),
 	regla1(L,L1),
-	%	representarSUDOKU(Sudoku_posibilidades),
 	regla2(L1,L2),
 	regla3(L2,Sudoku_posibilidades_mod),
 	nl,write('Sudoku Simplificado:'),nl,write('--------------------'),nl,
