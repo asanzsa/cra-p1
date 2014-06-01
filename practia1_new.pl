@@ -51,6 +51,7 @@ simplificar_sudoku(Sudoku,Sudoku_posibilidades_mod):-
 	representarSUDOKU(Sudoku_posibilidades),nl,
 	regla0(Sudoku_posibilidades,L),
 	regla1(L,L1),
+	%	representarSUDOKU(Sudoku_posibilidades),
 	regla2(L1,L2),
 	regla3(L2,Sudoku_posibilidades_mod),
 	nl,write('Sudoku Simplificado:'),nl,write('--------------------'),nl,
@@ -370,20 +371,6 @@ count(X, [Y|T], N) :-
     count(X, T, N).  /* just count the rest */
 
 
-replace([],_,_,[]).
-replace(L1, I, Nv, L2):-
-	replace_aux(L1, I, Nv, 1, [], L2).
-replace_aux([], _, _, _, Temp, L2):-
-	reverse(Temp, L2).
-replace_aux([_|L1], I, Nv, Pos, Temp, L2):-
-	I =:= Pos,
-	Pos1 is Pos + 1,
-	replace_aux(L1, I, Nv, Pos1, [Nv|Temp], L2).
-replace_aux([A|L1], I, Nv, Pos, Temp, L2):-
-	Pos1 is Pos + 1,
-	replace_aux(L1, I, Nv, Pos1, [A|Temp], L2).
-
-
 % Elemento X que aparece N veces.
 unifica(Lista, X):-
 	unifica_aux(Lista, [], X).
@@ -422,6 +409,7 @@ validos(9).
 % Si dos números aparecen solos en dos lugares distintos de una fila, columna o cuadro, 
 %  los borramos del resto de lugares de la fila, columna o cuadro correspondiente.
 % #######################################################################################
+
 regla2_process_other_rules(SudokuIn, SudokuOut):-
 	regla0(SudokuIn, SudokuR0),
 	regla1(SudokuR0, SudokuR1),
@@ -442,46 +430,78 @@ regla2(SudokuIn,SudokuOut):-
 regla2(SudokuIn, Sudoku_regla2):-
 	append([], SudokuIn, Sudoku_regla2).
 
+%aplicaregla2_fila([1,8,[6,7,9],5,[4,6,7,9],[4,6,9],3,2,[4,6,7,9],[2,7,9],[6,9],[6,7,9],[1,4,6,7,9],3,[1,4,6,9],[4,5,6,7,8,9],[4,5,7,8,9],[4,5,6,7,8,9],4,5,[3,6,7,9],8,2,[6,9],[6,7,9],[7,9],1,3,[4,9],[8,9],[2,4,6,9],[4,5,6,9],[2,4,5,6,9],[2,4,5,6,7,8,9],1,[2,4,5,6,7,8,9],[9],7,5,[1,2,3,4,6,9],[4,6,9],8,[2,4,6,9],[4,9],[2,3,4,6,9],6,2,[1,8,9],[1,3,4,9],[4,5,9],7,[4,5,8,9],[4,5,8,9],[3,4,5,8,9],[5,7,9],[6,9],2,[4,6,7,9],1,[4,5,6,9],[4,5,7,8,9],3,[4,5,7,8,9],8,[1,6,9],4,[2,3,6,7,9],[5,6,7,9],[2,3,5,6,9],[1,2,5,7,9],[5,7,9],[2,5,7,9],[5,7,9],3,[1,7,9],[2,4,7,9],[4,5,7,8,9],[2,4,5,9],[1,2,4,5,7,8,9],6,[2,4,5,7,8,9]], X).
 aplicaregla2_fila(Sudoku, SudokuTemp):-
 	fila(Confli),
 	generarListaLugares(Sudoku, Confli, ListaLugares),
-    numero_veces(ListaLugares, 2, 2, TR2),
-    is_list(TR2),
+    %numero_veces(ListaLugares, 2, 2, TR2),
+    elemento_repetido_r2(ListaLugares,TR2),
     reemplaza(Confli,Sudoku,[],SudokuTemp,TR2,_).
 
 aplicaregla2_columna(Sudoku, SudokuTemp):-
 	columna(Confli),
 	generarListaLugares(Sudoku, Confli, ListaLugares),
-    numero_veces(ListaLugares, 2, 2, TR2),
-    is_list(TR2),
+    %numero_veces(ListaLugares, 2, 2, TR2),
+    elemento_repetido_r2(ListaLugares,TR2),
     reemplaza(Confli,Sudoku,[],SudokuTemp,TR2,_).
 
 aplicaregla2_cuadro(Sudoku, SudokuTemp):-
 	cuadro(Confli),
 	generarListaLugares(Sudoku, Confli, ListaLugares),
-	numero_veces(ListaLugares, 2, 2, TR2),
-	is_list(TR2),
+	%numero_veces(ListaLugares, 2, 2, TR2),
+    elemento_repetido_r2(ListaLugares,TR2),
 	reemplaza(Confli,Sudoku,[],SudokuTemp,TR2,_).
 
+% elemento_repetido_r2([[6,7],[6,7],3,8,5,1,2,4,9],X).
+% elemento_repetido_r2([[6,7],[6,7],3,8,5,1,2,[4,6],9],X).
+elemento_repetido_r2(ListaLugares, X):-
+	numero_veces(ListaLugares, 2, 2, TR2),
+	unifica(ListaLugares, T),
+	subtract(T,TR2,Q),
+	length(Q,Len),
+	Len>=1,
+	is_element_list(ListaLugares,TR2,Times),
+	Times > 4,
+	append([],TR2,X).
 
-anyadir_posiciones_conflictivas(Confli, IList, NuevosConflictivos):-
-	anyadir_posiciones_conflictivas_aux(Confli, IList, [], NuevosConflictivos).
 
-anyadir_posiciones_conflictivas_aux(Confli, [], _, NuevosConflictivos):-
-	append([],Confli,NuevosConflictivos).
 
-anyadir_posiciones_conflictivas_aux(Confli, [I|IList], _, NuevosConflictivos):-
-	conflictivos(I,Y),
-	union(Y, Confli, X),
-	anyadir_posiciones_conflictivas_aux(X, IList, [], NuevosConflictivos).
+
+is_element_list(ListaLugares,Element,Times):-
+	is_element_list(ListaLugares,Element,[],Times).
+
+is_element_list([], Element, LLAux, X):-
+	times_contains_element(LLAux,Element,0,X).
+
+is_element_list([L|ListaLugares], Element, LLAux, X):-
+	is_list(L),
+	append(LLAux,L,T),
+	is_element_list(ListaLugares, Element, T, X).
+
+is_element_list([L|ListaLugares], Element, LLAux, X):-
+	integer(L),
+	is_element_list(ListaLugares, Element, LLAux, X).
+
+times_contains_element(_,[],A,X):-
+	X is A.
+times_contains_element(L,[E|Elementos],A,X):-
+	member(E,L),
+	count(E,L,N),
+	NA is A + N,
+	times_contains_element(L,Elementos,NA,X).
+
 
 
 % L1 la lista, X longitud lista, Times numero de veces buscada, T elemento buscado, 
+numero_veces([], _, _, T):-
+	T is 0.
+
 numero_veces([L|L1], X, Times, T):-
 	is_list(L),
 	length(L, X),
 	numveces(L1, L, 1, K),
 	Times =:= K,
+    is_list(L),
 	append([],L,T).
 
 numero_veces([L|L1], X, Times, T):-
@@ -588,6 +608,8 @@ aplicaregla3_fila(Sudoku, SudokuTemp):-
 	fila(Confli),
 	generarListaLugares(Sudoku, Confli, ListaLugares),
     elegir_candidato_r3(ListaLugares, Candidatos, Pos),
+	is_element_list(ListaLugares,Candidatos,Times),
+	Times > 7,
 	resolver_posiciones_r3(Confli, Pos, PosSudoku),
     simplifica_sudoku_r3(Sudoku,Confli,PosSudoku,Candidatos,[],SudokuTemp).
 
@@ -595,6 +617,8 @@ aplicaregla3_cuadro(Sudoku, SudokuTemp):-
 	cuadro(Confli),
 	generarListaLugares(Sudoku, Confli, ListaLugares),
     elegir_candidato_r3(ListaLugares, Candidatos, Pos),
+	is_element_list(ListaLugares,Candidatos,Times),
+	Times > 7,
 	resolver_posiciones_r3(Confli, Pos, PosSudoku),
     simplifica_sudoku_r3(Sudoku,Confli,PosSudoku,Candidatos,[],SudokuTemp).
 
@@ -602,6 +626,8 @@ aplicaregla3_columna(Sudoku, SudokuTemp):-
 	columna(Confli),
 	generarListaLugares(Sudoku, Confli, ListaLugares),
     elegir_candidato_r3(ListaLugares, Candidatos, Pos),
+	is_element_list(ListaLugares,Candidatos,Times),
+	Times > 7,
 	resolver_posiciones_r3(Confli, Pos, PosSudoku),
     simplifica_sudoku_r3(Sudoku,Confli,PosSudoku,Candidatos,[],SudokuTemp).
 
