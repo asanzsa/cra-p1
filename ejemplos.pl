@@ -23,8 +23,8 @@
 %                   '----------------'  '----------------'  '----------------'  
 %
 %
-% Autores:  Álvaro Sanz Sanz
-% 			Susana Morales Sánchez
+% Autores:  Álvaro 
+% 			Susana 
 %
 % Fecha:    21/05/2014
 %
